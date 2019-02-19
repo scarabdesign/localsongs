@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Zaireeka</title>
+		{{> header}}
+		<script>
+			var auth = new Auth("songs", "Zaireeka", "zaireeka");
+			{{^un}}
+			$(document).on("ready", function(){
+				auth.init();
+			});
+			{{/un}}
+		</script>
+
+		{{#un}}
+		<script src="/public/songs/ext/buzz.min.js"></script>
+		<script>
+			var ce = function(type){
+				return document.createElement(type);
+			};
+			var mainDir = "/files/The%20Flaming%20Lips/1997%20-%20Flaming%20Lips%20-%20Zaireeka%20-%204%20Disc%20Set";
+			var cdDirs = [
+				"/1997%20-%20Flaming%20Lips%20-%20Zaireeka%20(Disc%201)/",
+				"/1997%20-%20Flaming%20Lips%20-%20Zaireeka%20(Disc%202)/",
+				"/1997%20-%20Flaming%20Lips%20-%20Zaireeka%20(Disc%203)/",
+				"/1997%20-%20Flaming%20Lips%20-%20Zaireeka%20(Disc%204)/",
+			];
+			var songPaths = [
+				"01 Okay I'll Admit That I Really Don't Understand.mp3",
+				"02 Riding to Work in the Year 2025 (Your Invisible Now).mp3",
+				"03 Thirty-Five Thousand Feet of Despair.mp3",
+				"04 A Machine in India.mp3",
+				"05 The Train Runs Over the Camel But Is Derailed by the Gnat.mp3",
+				"06 How Will We Know- (Futuristic Crashendos).mp3",
+				"07 March of the Rotten Vegetables.mp3",
+				"08 The Big Ol' Bug Is the New Baby Now.mp3"
+			];
+			
+			var startLoad = [];
+			
+			var isiPhone = /iphone/.test(navigator.userAgent.toLowerCase());
+			
+			var buildSongList = function(){
+				for(var i in songPaths){
+					$(document.body)
+						.css({
+							"font-family": "arial",
+							"font-size": "12px"
+						})
+						.append(
+							$(ce("div"))
+								.append(
+									$(ce("input"))
+										.attr({
+											"type": "button",
+											"value": "Load",
+											"name": "b_" + i
+										})
+										.css({
+											"width": "60px",
+											"margin-right": "5px"
+										})
+										.on("click", {"i": i}, function(e){
+											loadSong(parseInt(e.data.i, 10), this);
+										}),
+									songPaths[i].replace(/\.mp3/, "")
+								)
+						)
+				}
+			}
+			
+			var loadSong = function(index, button, preload){
+				
+				var sounds = [];
+				var prog = [0, 0, 0, 0];
+				var zSong;
+				var paused = 0;
+				
+				$(button)
+					.val("0%")
+					.unbind("click")
+					.on("click", function(){
+						sumProg(true);
+					});
+				
+				var getDownloadProgress = function(s) {
+					if (!s.getDuration() > 0) {
+						return false;
+					}
+					var t1 = s.getBuffered();
+					if (t1 && t1[0]) {
+						var t2 = t1[0].end;
+						if (t2) {
+							var duration = s.getDuration();
+							var data = parseInt((
+								parseInt(t2, 10) / parseInt(duration, 10)
+							) * 100, 10);
+							return data;
+						}
+					}
+				};
+				
+				var sumProg = function(kick){
+					var sum = 0;
+					for (var ind = 0; ind < prog.length; ++ind){
+						if(!prog[ind] && isiPhone){
+							sounds[ind].load();
+						}
+						if(kick){
+							(isiPhone && sounds[ind].load()) || sounds[ind].play();
+							console.log(prog);
+						}
+						sum = parseInt(sum + prog[ind]);
+					}
+					button.value = (sum / 4) + "%";
+					if(sum >= 390){
+						$(button)
+							.unbind("click")
+							.attr("value", "Play")
+							.on("click", {"zSong": zSong}, function(e){
+								e.data.zSong.togglePlay();
+								if(!startLoad[index + 1]){
+									//loadSong((index + 1), $("input[name='b_"+(index + 1)+"']").get(0), true);
+								}
+							});
+					}
+				};
+				
+				for(var ii in cdDirs){
+					var s = new buzz.sound(mainDir + cdDirs[ii] + songPaths[index]);
+					s._index = ii;
+					s.bind("progress", function(event){
+						startLoad[index] = true;
+						var p = getDownloadProgress(this);
+						if(!p)
+							return;
+						var progInt = parseInt(p, 10);
+						prog[this._index] = progInt;
+						sumProg();
+					})
+					.bind("playing", function(event){
+						if(paused < 4 && !isiPhone){
+							this.pause();
+							++paused;
+						}
+					})
+					.bind("error", function(event){
+						console.log(event);
+					});
+					sounds.push(s);
+				}
+				zSong = new buzz.group(sounds);
+				if(preload || isiPhone){
+					zSong.load()
+				}else{
+					zSong.play()
+				}
+			}; 
+			
+			$(document).on("ready", function(){
+				buildSongList();
+			});
+
+		</script>
+		{{/un}}
+	</head>
+	<body>
+		{{#showForm}}
+			{{> loginform}}
+		{{/showForm}}
+	</body>
+</html>

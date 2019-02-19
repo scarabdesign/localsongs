@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Songs</title>
+		{{> header}}
+		<script>
+			var auth = new Auth("songs", "Songs", "songs", "{{un}}");
+			{{^showList}}
+			$(document).on("ready", function(){
+				auth.init();
+			});
+			{{/showList}}
+		</script>
+		{{#showList}}
+			<script src="/public/utils/jquery.ui.touch-punch.min.js"></script>
+			<script src="/public/utils/jquery.scrollintoview.min.js"></script>
+			<script src="/public/songs/ext/buzz.js"></script>
+			<link rel="stylesheet" type="text/css" href="/public/songs/lib/songs.css?{{ts}}" />
+			{{#jsFiles}}
+				<script src="/public/songs/lib/{{file}}?{{hash}}"></script>
+			{{/jsFiles}}
+			<script>
+				var un = "{{un}}";
+				var isSu = {{isSu}};
+				var currentDl = {{#dl}}{{&dl}}{{/dl}}{{^dl}}null{{/dl}};
+				var service = "songs";
+				var mobileDevice = isMobile();
+				document.ontouchmove = function(event){
+					if($(event.target).closest(".playcontrols").length > 0){
+						event.preventDefault();
+					}
+				}
+				$(document).on("ready", function(){
+					initSongs();
+				});
+				
+				$(window).on("beforeunload", function(){
+					storage.saveRemote();
+				});
+				
+			</script>
+		{{/showList}}
+	</head>
+	<body>
+		{{#showForm}}
+			{{> loginform}}
+		{{/showForm}}
+		{{#showList}}
+			<div class="alertbody hide"></div>
+			<div class="playcontrols"></div>
+			<div class="body">
+				<div class="playlists scrollable hide"></div>
+				<div class="availablesongs scrollable"></div>
+				<div class="chosensongs scrollable hide"></div>
+			</div>
+		{{/showList}}
+	</body>
+</html>
